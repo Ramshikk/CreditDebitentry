@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Journal Entries</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Display Journal Entries</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Particulars</th>
+                <th>Debit</th>
+                <th>Credit</th>
+            </tr>
+        </thead>
+        <form method="post"> {% csrf_token %} <input type="date" name="date"><button type="submit" >Search</button></form>
+        <tbody id="entryTableBody">
+            <!-- Entry data will be dynamically inserted here -->
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Total:</th>
+                <th></th>
+                <th id="debitTotal"></th>
+                <th id="creditTotal"></th>
+            </tr>
+            <tr>
+                <th>Current Balance:</th>
+                <th></th>
+                <th id="dbalance"></th>
+                <th id="cbalance"></th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <script>
+        // Define entries as an empty array initially
+        var entries = [];
+        var debitTotal = 0;
+        var creditTotal = 0;
+        var Currentbalance = 0;
+        var dbalance = 0;
+        var cbalance = 0;
+
+        // Populate the entries array using Django template syntax
+        {% for entry in entrydetails %}
+            entries.push({
+                date: '{{ entry.date }}',
+                Particulars: '{{ entry.particulars }}',
+                debit: {% if entry.transaction_type == 0 %} {{ entry.amount }} {% else %} 0 {% endif %},
+                credit: {% if entry.transaction_type == 0 %} 0 {% else %} {{ entry.amount }} {% endif %}
+            });
+
+            // Update debit and credit totals
+            debitTotal += {% if entry.transaction_type == 0 %} {{ entry.amount }} {% else %} 0 {% endif %};
+            creditTotal += {% if entry.transaction_type == 0 %} 0 {% else %} {{ entry.amount }} {% endif %};
+            Currentbalance = debitTotal - creditTotal;
+            dbalance = Math.max(Currentbalance, 0);
+            cbalance = Math.max(-Currentbalance, 0);
+
+ 
+            // Determine whether to update debit balance or credit balance
+           /* if (debitTotal<creditTotal) {
+                //cbalance =math.abs(Currentbalance);
+                cbalance = Currentbalance;
+                dbalance = 0; // Set debit balance to 0 if current balance is positive
+            } else {
+                cbalance = 0; // Set credit balance to 0 if current balance is negative
+                dbalance = Math.abs(Currentbalance);
+            } */
+            
+        {% endfor %}
+
+        // Function to display entries in the table
+        function displayEntries() {
+            var entryTableBody = document.getElementById('entryTableBody');
+            var debitTotalCell = document.getElementById('debitTotal');
+            var creditTotalCell = document.getElementById('creditTotal');
+            var dbalanceCell = document.getElementById('dbalance');
+            var cbalanceCell = document.getElementById('cbalance');
+
+            // Clear existing entries and totals
+            entryTableBody.innerHTML = '';
+            debitTotalCell.textContent = debitTotal;
+            creditTotalCell.textContent = creditTotal;
+            dbalanceCell.textContent = dbalance;
+            cbalanceCell.textContent = cbalance;
+
+            // Loop through the entries and append rows to the table
+            entries.forEach(function(entry) {
+                var row = entryTableBody.insertRow();
+
+                var dateCell = row.insertCell(0);
+                dateCell.textContent = entry.date;
+
+                var particularsCell = row.insertCell(1);
+                particularsCell.textContent = entry.Particulars;
+
+                var debitCell = row.insertCell(2);
+                debitCell.textContent = entry.debit;
+
+                var creditCell = row.insertCell(3);
+                creditCell.textContent = entry.credit;
+            });
+        }
+
+        // Call the function to display entries when the page loads
+        displayEntries();
+    </script>
+
+</body>
+</html>
